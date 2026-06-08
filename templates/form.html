@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% if action == 'add' %}Добавить книгу{% else %}Редактировать{% endif %} — Книжная полка</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Nunito:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0F0E0C; --surface: #1A1916; --border: #2E2C28;
+    --text: #F0EDE6; --muted: #8A8578; --accent: #D4A84B;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Nunito', sans-serif; min-height: 100vh; }
+
+  header {
+    border-bottom: 1px solid var(--border); padding: 2rem 4rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .logo { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 900; }
+  .logo span { color: var(--accent); }
+  .back { color: var(--muted); text-decoration: none; font-size: .9rem; transition: color .2s; }
+  .back:hover { color: var(--accent); }
+
+  .page { max-width: 640px; margin: 4rem auto; padding: 0 2rem; }
+  h1 { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 900; margin-bottom: 2.5rem; }
+  h1 span { color: var(--accent); }
+
+  .form-group { margin-bottom: 1.4rem; }
+  label { display: block; font-size: .8rem; font-weight: 600; letter-spacing: .5px; color: var(--muted); text-transform: uppercase; margin-bottom: .4rem; }
+  input[type=text], input[type=number], select, textarea {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); padding: .7rem 1rem; font-family: 'Nunito', sans-serif;
+    font-size: .95rem; outline: none; transition: border .2s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 100px; }
+  select option { background: var(--surface); }
+
+  .color-row { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .3rem; }
+  .color-swatch {
+    width: 32px; height: 32px; border: 2px solid transparent; cursor: pointer;
+    transition: transform .15s, border-color .15s;
+  }
+  .color-swatch:hover { transform: scale(1.15); }
+  .color-swatch.selected { border-color: white; }
+  #cover_color { width: 80px; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  .submit-btn {
+    background: var(--accent); color: #0F0E0C; border: none; padding: .8rem 2.5rem;
+    font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 1rem;
+    cursor: pointer; transition: all .2s; margin-top: .5rem;
+    clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+  }
+  .submit-btn:hover { background: #e8c063; transform: translateY(-1px); }
+
+  .preview-cover {
+    height: 100px; margin-bottom: .6rem; display: flex; align-items: center;
+    justify-content: center; transition: background .3s;
+    font-family: 'Playfair Display', serif; font-size: .9rem;
+    color: rgba(255,255,255,.85); text-align: center; padding: 1rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Книж<span>ная</span> полка</div>
+  <a href="/" class="back">← Назад к каталогу</a>
+</header>
+
+<div class="page">
+  <h1>{% if action == 'add' %}<span>Добавить</span> книгу{% else %}<span>Редактировать</span> книгу{% endif %}</h1>
+
+  <form method="post">
+    <div class="form-group">
+      <label>Название *</label>
+      <input type="text" name="title" required value="{{ book.title if book else '' }}" placeholder="Введите название книги">
+    </div>
+
+    <div class="form-group">
+      <label>Автор *</label>
+      <input type="text" name="author" required value="{{ book.author if book else '' }}" placeholder="Имя и фамилия автора">
+    </div>
+
+    <div class="row2">
+      <div class="form-group">
+        <label>Жанр *</label>
+        <input type="text" name="genre" required value="{{ book.genre if book else '' }}" placeholder="Роман, Фантастика...">
+      </div>
+      <div class="form-group">
+        <label>Год издания</label>
+        <input type="number" name="year" min="1000" max="2099" value="{{ book.year if book else '' }}" placeholder="2024">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Рейтинг (0–5)</label>
+      <input type="number" name="rating" min="0" max="5" step="0.1" value="{{ book.rating if book else '' }}" placeholder="4.5">
+    </div>
+
+    <div class="form-group">
+      <label>Описание</label>
+      <textarea name="description" placeholder="Краткое описание книги...">{{ book.description if book else '' }}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Цвет обложки</label>
+      <div class="preview-cover" id="coverPreview" style="background: {{ book.cover_color if book else '#4A90D9' }};">
+        {{ book.title if book else 'Предпросмотр' }}
+      </div>
+      <input type="hidden" name="cover_color" id="cover_color" value="{{ book.cover_color if book else '#4A90D9' }}">
+      <div class="color-row" id="colorSwatches">
+        {% set colors = ['#E8534A','#D4A84B','#4A90D9','#2D6A4F','#7B4F8E','#F4A261','#264653','#E9C46A','#A8304A','#3D7AB5','#5C7A5C','#8B5E3C'] %}
+        {% for c in colors %}
+        <div class="color-swatch {% if (book.cover_color if book else '#4A90D9') == c %}selected{% endif %}"
+             style="background:{{ c }}" data-color="{{ c }}" onclick="selectColor(this)"></div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <button type="submit" class="submit-btn">{% if action == 'add' %}Добавить книгу{% else %}Сохранить изменения{% endif %}</button>
+  </form>
+</div>
+
+<script>
+  function selectColor(el) {
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+    const c = el.dataset.color;
+    document.getElementById('cover_color').value = c;
+    document.getElementById('coverPreview').style.background = c;
+  }
+  // Update preview title on input
+  const titleInput = document.querySelector('input[name="title"]');
+  const preview = document.getElementById('coverPreview');
+  titleInput.addEventListener('input', () => {
+    preview.textContent = titleInput.value || 'Предпросмотр';
+  });
+</script>
+</body>
+</html>

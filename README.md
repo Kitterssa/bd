@@ -1,3 +1,8 @@
+Cтарт
+```
+pip install -r requirements.txt
+python app.py
+```
 База данных SQLite
 | Поле | Тип | Описание |
 |---|---|---|
